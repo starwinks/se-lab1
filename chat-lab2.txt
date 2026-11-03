@@ -1,0 +1,26 @@
+实验二: 软件设计与建模 人机设计讨论
+
+项目名称: 栖行酒店预订系统
+辅助工具: Codex, PlantUML, Figma, Typst
+本文为按设计主题组织的讨论稿, 包括简要设计意见, AI方案分析与最终取舍.
+
+1. 设计任务与AI初稿
+
+设计意见:
+沿用实验一的需求, 重点把模块关系和订单流程设计清楚. UML至少覆盖四种图, 类图必须有; UI覆盖各功能模块, 用PlantUML和Figma完成, 报告说明工具使用和修改过程.
+
+AI:
+先采用模块化单体, 将查询, 预订, 前台, 每日售卖, 酒店资料, 授权和统计审计分别组织. 预订涉及多晚库存和订单修订, 暂不拆成需要跨服务协调的分布式事务. 初稿给出9份UML候选及20屏界面, 后续按表达目的收敛.
+
+初稿类图片段:
+class "订单 Booking" as Booking {
+  +state
+  +version
+  +waitingSince
+  +coordinationRequired
+  +confirm(t)
+  +revise(t)
+  +cancel(reason)
+}
+
+候选图包括用例图, 类图, 组件图, 订单及客房状态图, 活动图, 两种时序图和部署图. 初稿定位: lab2-uml-ai-draft, lab2-ui-ai-draft.

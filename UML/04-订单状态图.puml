@@ -1,0 +1,30 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName "Noto Sans CJK SC"
+title 04 订单五态状态图 - 行为图
+state "待确认" as Pending
+state "已确认" as Confirmed
+state "已入住" as CheckedIn
+state "已完成" as Completed
+state "已取消" as Cancelled
+[*] --> Pending : 创建成功/占全部晚, v=1
+Pending --> Confirmed : 酒店确认\n[t <= waitingSince+30分钟]
+Pending --> Pending : 修改成功且本轮未过期\nv+1, 重计时
+Confirmed --> Pending : 修改成功\nv+1, 重计时
+Pending --> Cancelled : 普通取消/释放全部占用, 费用0
+Confirmed --> Cancelled : 普通取消且实际未入住\n释放全部占用, 费用0
+Pending --> Cancelled : 超时\n[t > waitingSince+30分钟]
+Confirmed --> CheckedIn : 入住成功/分配空闲实体房
+CheckedIn --> Completed : 退房成功/房间待清洁
+Completed --> [*]
+Cancelled --> [*]
+note right of Pending
+旧版本任务跳过.
+修改失败不改周期或版本.
+已过期的确认/修改先执行超时取消.
+end note
+note bottom of CheckedIn
+已入住/已完成不能普通修改或取消.
+待协调为独立标记, 不增加第六态.
+end note
+@enduml
