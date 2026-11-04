@@ -1,0 +1,83 @@
+@startuml
+skinparam defaultFontName "Noto Sans SC"
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam ArrowColor #61705B
+skinparam LineColor #61705B
+skinparam classBackgroundColor #F4F5EC
+skinparam classBorderColor #68765F
+skinparam classHeaderBackgroundColor #E3E9DA
+skinparam componentBackgroundColor #F4F5EC
+skinparam componentBorderColor #68765F
+skinparam stateBackgroundColor #F4F5EC
+skinparam stateBorderColor #68765F
+skinparam noteBackgroundColor #FBF5E7
+skinparam noteBorderColor #B6AA85
+title 04 预订时序图 - 交互性图
+footer 复核后设计 | 请求状态先于行程重查分派
+actor "顾客" as Customer
+boundary "UI-04 / UI-21" as UI
+control BookingService as Booking
+control Authorizer as Auth
+control InventoryService as Inventory
+control AuditService as Audit
+database PostgreSQL as DB
+database "本地持久失败队列" as Queue
+Customer -> UI : 提交行程或提醒决定
+UI -> Booking : create / decideDuplicate(requestKey, payload)
+Booking -> Auth : 当前身份及对象权限
+Auth --> Booking : 允许
+Booking -> DB : BEGIN T, 建立/锁定请求行\n校验原业务摘要并读取技术状态
+alt SUCCEEDED或DECLINED
+  Booking -> DB : COMMIT T
+  Booking --> UI : 重放原结果, 不再执行业务
+else AWAITING_CONSENT且没有决定
+  Booking -> DB : COMMIT T
+  Booking --> UI : 重放原提醒, 不重查后自动创建
+else AWAITING_CONSENT决定无效或OPEN误用决定
+  Booking -> DB : ROLLBACK T
+  Booking -> Audit : 独立失败审计
+  Booking --> UI : CHALLENGE_INVALID
+else AWAITING_CONSENT有效放弃
+  Booking -> DB : 保存DECLINED及未创建结果\nCOMMIT T
+  Booking --> UI : 未创建, 无新库存占用
+else OPEN普通提交或AWAITING_CONSENT有效继续
+  Booking -> DB : 取得行程事务锁\nOPEN才检查是否首次需要提醒
+  alt OPEN存在相同行程
+    Booking -> DB : 保存AWAITING_CONSENT及challenge\nCOMMIT T, 释放全部锁
+    Booking --> UI : 等待顾客选择, 尚未创建
+  else OPEN无相同行程或AWAITING_CONSENT有效继续
+    Booking -> DB : 原事务T锁酒店门禁
+    Booking -> Inventory : 锁全部住宿晚并复查当前可售量
+    Inventory -> DB : 按房型/日期顺序锁行
+    Inventory --> Booking : 全晚结果和当前价格
+    alt 无房/停售/停业
+      Booking -> DB : ROLLBACK T
+      Booking -> Audit : 独立失败审计
+      Booking --> UI : 拒绝, 无局部占用
+    else 可售
+      Booking -> DB : 写订单/快照/占用/版本任务\n写请求SUCCEEDED及原结果
+      Booking -> Audit : appendSuccess(event, 原事务T)
+      Audit -> DB : 同事务成功审计
+      alt 任一写入或成功审计失败
+        Booking -> DB : ROLLBACK T
+        Booking -> Audit : persistFailure(独立事务)
+        Audit -> DB : 保存实际失败
+        opt 日志数据库不可用
+          Audit -> Queue : 持久保存同一operationId
+        end
+        Booking --> UI : 明确失败, 全部业务回滚
+      else 全部成功
+        Booking -> DB : COMMIT T
+        Booking --> UI : 待确认订单及30分钟周期
+      end
+    end
+  end
+end
+note over Booking,DB
+同号异业务参数先回滚并拒绝.
+AWAITING_CONSENT只接受有效challenge决定,
+原匹配订单改期不等于顾客已经同意.
+end note
+@enduml

@@ -1,0 +1,137 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName "Noto Sans SC"
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam ArrowColor #61705B
+skinparam LineColor #61705B
+skinparam classBackgroundColor #F4F5EC
+skinparam classBorderColor #68765F
+skinparam classHeaderBackgroundColor #E3E9DA
+skinparam componentBackgroundColor #F4F5EC
+skinparam componentBorderColor #68765F
+skinparam stateBackgroundColor #F4F5EC
+skinparam stateBorderColor #68765F
+skinparam noteBackgroundColor #FBF5E7
+skinparam noteBorderColor #B6AA85
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+title 01 类图 - 结构性图
+footer 复核后设计 | 属性封装与状态守卫
+hide empty members
+class "顾客账户" as CustomerAccount {
+  -id: UUID
+}
+class "酒店" as Hotel {
+  -id: UUID
+  -temporarilyClosed: boolean
+  +close(reason: String): void
+}
+class "房型" as RoomType {
+  -id: UUID
+  -maxGuests: int
+  +canHost(persons: int): boolean
+}
+class "逐晚库存" as DailyInventory {
+  -night: LocalDate
+  -total: int
+  -occupied: int
+  +canApply(delta: int): boolean
+  +apply(delta: int): void
+  +adjustTotal(value: int): void
+}
+class "预订订单" as Booking {
+  -state: BookingState
+  -version: long
+  -waitingSince: Instant
+  -coordinationRequired: boolean
+  +confirm(t: Instant): void
+  +revise(t: Instant): BookingRevision
+  +cancel(reason: String): void
+  +checkIn(): void
+  +complete(): void
+}
+class "订单修订快照" as BookingRevision <<immutable>> {
+  -version: long
+  -checkIn: LocalDate
+  -checkOut: LocalDate
+  -totalAmount: Decimal
+}
+class "逐晚价格" as NightPrice <<immutable>> {
+  -night: LocalDate
+  -unitPrice: Decimal
+  -quantity: int
+  +amount(): Decimal
+}
+class "当前逐晚占用" as InventoryAllocation {
+  -night: LocalDate
+  -quantity: int
+}
+class "实体客房" as Room {
+  -id: UUID
+  -state: RoomState
+  +assign(): void
+  +checkOut(): void
+  +finishCleaning(): void
+  +startRepair(): void
+  +confirmRepairFinished(): void
+}
+class "入住分配" as RoomAssignment {
+  -checkedInAt: Instant
+  -checkedOutAt: Instant?
+  +end(t: Instant): void
+}
+class "版本超时任务" as TimeoutJob {
+  -targetVersion: long
+  -dueAt: Instant
+  +matches(order: Booking): boolean
+  +strictlyDue(t: Instant): boolean
+}
+class "协调记录" as CoordinationCase {
+  -reason: String
+  -resolution: String?
+}
+enum BookingState {
+  待确认
+  已确认
+  已入住
+  已完成
+  已取消
+}
+enum RoomState {
+  空闲
+  已入住
+  待清洁
+  维修中
+}
+Hotel "1" *-- "0..*" RoomType
+RoomType "1" *-- "0..*" DailyInventory
+RoomType "1" -- "0..*" Room
+CustomerAccount "1" -- "0..*" Booking : 下单
+Booking "0..*" --> "1" RoomType
+Booking "1" *-- "1..*" BookingRevision
+BookingRevision "1" *-- "1..*" NightPrice
+Booking "1" -- "0..*" InventoryAllocation
+InventoryAllocation "0..*" --> "1" DailyInventory
+Booking "1" -- "0..*" RoomAssignment : 历史
+Room "1" -- "0..*" RoomAssignment
+BookingRevision "1" -- "1" TimeoutJob : 确认周期
+Hotel "1" -- "0..*" CoordinationCase
+CoordinationCase "0..*" -- "0..*" Booking
+Booking ..> BookingState
+Room ..> RoomState
+note bottom of Booking
+没有公开状态/版本写入接口.
+修改成功才创建修订并重计时;
+服务在同一事务持锁后调用领域方法.
+end note
+note bottom of DailyInventory
+本行守住0<=occupied<=total;
+跨晚净delta由InventoryService协调.
+end note
+note bottom of RoomAssignment
+同订单与同实体房均至多一条未结束分配.
+顾客账户与实际入住人分别保存.
+end note
+@enduml

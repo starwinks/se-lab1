@@ -1,0 +1,78 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName "Noto Sans SC"
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam ArrowColor #61705B
+skinparam LineColor #61705B
+skinparam classBackgroundColor #F4F5EC
+skinparam classBorderColor #68765F
+skinparam classHeaderBackgroundColor #E3E9DA
+skinparam componentBackgroundColor #F4F5EC
+skinparam componentBorderColor #68765F
+skinparam stateBackgroundColor #F4F5EC
+skinparam stateBorderColor #68765F
+skinparam noteBackgroundColor #FBF5E7
+skinparam noteBorderColor #B6AA85
+title 02 组件图 - 结构性图
+footer 复核后设计 | 补齐房型资料与授权管理入口
+component "顾客/酒店/平台界面" as UI
+package "模块化单体" {
+  component "HTTP控制器" as API
+  component "Authorizer\n身份与对象授权守卫" as Auth
+  component "CatalogQuery\n酒店组合查询" as Catalog
+  component "BookingService\n预订交易" as Booking
+  component "InventoryService\n逐晚库存与售卖" as Inventory
+  component "PricePolicy / ExpiryPolicy\n领域策略" as Policies
+  component "FrontDeskService\n实体房与入住退房" as Desk
+  component "RoomTypeService\n酒店房型资料" as RoomTypes
+  component "HotelService\n酒店资料与停业" as Hotel
+  component "AuthorizationService\n人员酒店授权管理" as Grants
+  component "ReportingService\n订单查询统计" as Report
+  component "AuditService\n成功同事务 / 失败独立保存" as Audit
+  component "UnitOfWork / Repository适配器" as UOW
+  component "TimeoutWorker" as Timeout
+  component "FailureAuditWorker" as Failure
+}
+database "PostgreSQL\n业务/任务/审计" as DB
+database "本地SQLite持久失败队列" as Queue
+UI --> API
+API --> Auth : 每个受限请求先鉴权
+API --> Catalog
+API --> Booking
+API --> Desk
+API --> Inventory
+API --> RoomTypes
+API --> Hotel
+API --> Grants
+API --> Report
+API --> Audit : 拒绝记失败 / 管理员查询
+Booking --> Inventory
+Booking --> Policies
+Booking --> Audit
+Desk --> Inventory
+Desk --> Audit
+RoomTypes --> Audit
+Hotel --> Audit
+Grants --> Audit
+Inventory --> Audit
+Booking --> UOW
+Desk --> UOW
+RoomTypes --> UOW
+Hotel --> UOW
+Grants --> UOW
+Inventory --> UOW
+Audit --> UOW : 成功用业务原事务
+Catalog --> DB : 授权查询
+Report --> DB : 授权范围与统一创建日批次
+UOW --> DB
+Timeout --> Booking : expire(order, version)
+Audit --> Queue : 失败日志数据库故障
+Failure --> Queue : 领取; 数据库确认后ACK
+Failure --> DB : operationId唯一补记
+note bottom of Auth
+授权守卫只判断访问资格;
+AuthorizationService才负责授权变更与审计.
+end note
+@enduml

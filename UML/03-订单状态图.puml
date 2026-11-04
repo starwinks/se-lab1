@@ -1,7 +1,22 @@
 @startuml
 !pragma layout smetana
-skinparam defaultFontName "Noto Sans CJK SC"
-title 04 订单五态状态图 - 行为图
+skinparam defaultFontName "Noto Sans SC"
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam ArrowColor #61705B
+skinparam LineColor #61705B
+skinparam classBackgroundColor #F4F5EC
+skinparam classBorderColor #68765F
+skinparam classHeaderBackgroundColor #E3E9DA
+skinparam componentBackgroundColor #F4F5EC
+skinparam componentBorderColor #68765F
+skinparam stateBackgroundColor #F4F5EC
+skinparam stateBorderColor #68765F
+skinparam noteBackgroundColor #FBF5E7
+skinparam noteBorderColor #B6AA85
+title 03 订单状态图 - 行为性图
+footer 复核后设计 | 酒店REQ-001至REQ-032
 state "待确认" as Pending
 state "已确认" as Confirmed
 state "已入住" as CheckedIn
@@ -22,6 +37,7 @@ note right of Pending
 旧版本任务跳过.
 修改失败不改周期或版本.
 已过期的确认/修改先执行超时取消.
+修改以全部必要锁取得后的最终t判定.
 end note
 note bottom of CheckedIn
 已入住/已完成不能普通修改或取消.
