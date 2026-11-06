@@ -118,5 +118,12 @@ window.screenCatalog = [
     "key": "conflict",
     "name": "售罄与状态冲突反馈",
     "module": "异常交互"
+  },
+  {
+    "id": "UI-21",
+    "key": "booking",
+    "query": "variant=duplicate",
+    "name": "相同行程的新请求确认",
+    "module": "重复预订提醒"
   }
 ];

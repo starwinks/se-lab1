@@ -1,0 +1,80 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor black
+skinparam titleFontColor black
+skinparam footerFontColor black
+skinparam ArrowFontColor black
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam monochrome true
+skinparam roundCorner 0
+skinparam dpi 150
+skinparam ArrowColor black
+skinparam activityBackgroundColor white
+skinparam activityBorderColor black
+skinparam activityDiamondBackgroundColor white
+skinparam activityDiamondBorderColor black
+skinparam partitionBackgroundColor white
+skinparam partitionBorderColor black
+title 05 入住办理活动图 - 行为性图
+footer 入住流程 | 选房不预留, 提交后事务内复查
+
+start
+partition "酒店工作人员 / UI-10" {
+  :核对订单与候选房号, 提交入住;
+  note left
+页面按授权酒店查询候选房.
+选房不预留房号或持有写事务.
+无空房时保留原订单协调处理.
+  end note
+}
+partition "前台服务 / 提交校验" {
+  :重新校验本次提交的身份及酒店授权;
+  if (身份及酒店授权有效?) then (是)
+    :接受本次入住提交;
+  else (否)
+    :独立记录权限拒绝;
+    :返回无权提交, 不写入住信息;
+    stop
+  endif
+}
+partition "前台服务与仓储 / 入住处理" {
+  :开启业务事务, 按统一顺序
+锁定酒店, 订单及所选客房;
+  :复查订单状态, 房型归属,
+房间空闲状态及未结束分配;
+  if (订单仍已确认, 同店同型且房间空闲\n并且订单和客房均无未结束分配?) then (是)
+    :复查通过, 准备入住变更;
+  else (否)
+    :回滚业务事务;
+    :独立记录实际状态冲突;
+    :返回状态变化, 提示刷新后重新选择;
+    stop
+  endif
+  :在原事务中保存入住分配,
+订单转已入住, 客房转已入住,
+同时写入成功审计;
+  note left
+日库存已在预订时占用,
+入住不重复扣减日库存.
+同订单和同客房均至多
+存在一条未结束分配.
+  end note
+  if (业务与审计全部写入成功?) then (是)
+    :提交业务事务;
+  else (否)
+    :回滚全部业务写入;
+    :独立记录实际写入失败;
+    :返回办理失败, 不显示成功分配;
+    stop
+  endif
+}
+partition "酒店工作人员 / 结果查看" {
+  :显示入住成功及分配房号;
+  stop
+}
+legend bottom left
+失败审计使用独立事务保存.
+日志数据库不可用时进入持久补记队列.
+endlegend
+@enduml

@@ -1,19 +1,24 @@
 @startuml
-skinparam defaultFontName "Noto Sans SC"
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor black
+skinparam titleFontColor black
+skinparam footerFontColor black
+skinparam ArrowFontColor black
 skinparam backgroundColor white
 skinparam shadowing false
-skinparam roundCorner 4
-skinparam ArrowColor #61705B
-skinparam LineColor #61705B
-skinparam classBackgroundColor #F4F5EC
-skinparam classBorderColor #68765F
-skinparam classHeaderBackgroundColor #E3E9DA
-skinparam componentBackgroundColor #F4F5EC
-skinparam componentBorderColor #68765F
-skinparam stateBackgroundColor #F4F5EC
-skinparam stateBorderColor #68765F
-skinparam noteBackgroundColor #FBF5E7
-skinparam noteBorderColor #B6AA85
+skinparam monochrome true
+skinparam roundCorner 0
+skinparam ArrowColor black
+skinparam LineColor black
+skinparam classBackgroundColor white
+skinparam classBorderColor black
+skinparam classHeaderBackgroundColor white
+skinparam componentBackgroundColor white
+skinparam componentBorderColor black
+skinparam stateBackgroundColor white
+skinparam stateBorderColor black
+skinparam noteBackgroundColor white
+skinparam noteBorderColor black
 title 04 预订时序图 - 交互性图
 footer 复核后设计 | 请求状态先于行程重查分派
 actor "顾客" as Customer
