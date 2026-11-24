@@ -1,0 +1,40 @@
+栖行酒店预订系统 | 实验三
+
+运行环境
+Python 3.11 或更新版本. 应用只使用标准库, 可离线构建.
+桌面浏览器打开 http://127.0.0.1:8767/ 使用.
+
+从源码构建及运行
+在本文件所在的 code 目录执行:
+  python -m compileall -q qixing
+  python build.py
+  python build/qixing.pyz --demo
+
+也可直接从源码运行:
+  python -m qixing --demo
+
+在 Windows 上如未配置 python 命令, 用 py -3 代替 python.
+需要指定文件位置或端口时使用 --db 路径 和 --port 端口.
+--demo 仅初始化空数据库, 默认数据库为 data/qixing.sqlite3.
+如需新演示数据, 指定另一个 --db 文件并加 --demo.
+按 Ctrl+C 停止服务. 正常重启会保留已提交数据.
+数据文件旁的 .audit 文件用于持久保存待补记的失败日志.
+
+演示账号
+guest (顾客), guest2 (另一位顾客), staff (梧桐里前台),
+staff2 (江畔居与西湖小筑员工), admin (平台管理员).
+演示密码均为 qixing-demo. 全部资料是虚构的本地演示数据.
+
+演示路径
+1. guest 进入首页, 按城市和日期筛选, 选梧桐里房型并提交预订.
+2. staff 登录订单工作台, 打开订单并确认, 选择客房办理入住.
+3. staff 办理退房, 到实体客房页面确认清洁.
+4. admin 在业务统计和关键操作日志中查看相应结果.
+
+测试与格式检查
+  python -m unittest discover -s tests -v
+组合查询基准 (在空临时库中运行独立的 HTTP 服务):
+  python -m tests.benchmark_catalog
+如已安装 Ruff:
+  ruff check .
+  ruff format --check .
