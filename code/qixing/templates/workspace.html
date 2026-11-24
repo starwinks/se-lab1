@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>$title | 栖行</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="workspace">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <aside class="work-sidebar">
+    <a class="brand" href="/orders">栖行酒店</a>
+    <nav class="work-nav-desktop" aria-label="工作台导航"><ul>$navigation</ul></nav>
+    <details class="work-nav-mobile">
+      <summary>展开导航</summary>
+      <nav aria-label="工作台导航"><ul>$navigation</ul></nav>
+    </details>
+  </aside>
+  <div class="work-area">
+    <header class="work-header">
+      <div class="work-wrap">
+        <span class="muted">$role</span>
+        <div class="work-account"><strong>$account</strong>$logout</div>
+      </div>
+    </header>
+    <main id="main" class="work-wrap">
+      <h1 class="page-title">$title</h1>
+      $notice$body
+    </main>
+  </div>
+</body>
+</html>

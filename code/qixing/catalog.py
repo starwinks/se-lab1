@@ -121,7 +121,7 @@ class CatalogQuery:
                   AND t.max_guests>=? AND (?='' OR h.city=?)
                   AND (?='' OR instr(t.name,?)>0)
             )
-            SELECT t.id,t.name,t.max_guests,h.name AS hotel,h.city,h.address,h.photo,
+            SELECT t.id,t.name,t.max_guests,h.id AS hotel_id,h.name AS hotel,h.city,h.address,h.photo,
                    SUM(a.price) AS total, MIN(a.remaining) AS remaining
             FROM available a JOIN room_types t ON t.id=a.room_type
             JOIN hotels h ON h.id=t.hotel_id
